@@ -22,6 +22,11 @@ public:
 
     void ensureablewrite(size_t len);
 
+    //在buffer里面消费len个字节
+    void retrieve(size_t len);
+    //从buffer里面取出len个字节
+    std::string retrieveAsstring(size_t len);
+
 private:
     std::vector<char> _Buffer;
     size_t _writeIndex;

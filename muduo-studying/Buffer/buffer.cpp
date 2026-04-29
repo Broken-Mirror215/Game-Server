@@ -45,3 +45,25 @@ std::string Buffer::ClearAll(){
     Noneall();
     return msg;
 }
+
+void Buffer::retrieve(size_t len){
+    if (len<readable()){
+        _readIndex+=len;
+    }
+    else
+    {
+        Noneall();
+    }
+}
+
+
+std::string Buffer::retrieveAsstring(size_t len){
+    if (len > readable())
+    {
+        len = readable();
+    }
+
+    std::string result(peek(), len);
+    retrieve(len);
+    return result;
+}
