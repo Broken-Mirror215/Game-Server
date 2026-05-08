@@ -11,7 +11,7 @@ _existing(false)
 
 Eventloop* EventloopThread::EventloopStart(){
     _started=true;
-    int ret=pthread_create(&_threadid,nullptr,&StartThread,nullptr);
+    int ret=pthread_create(&_threadid,nullptr,&StartThread,this);
     if (ret!=0){
         std::cerr<<"thread create error"<<std::endl;
         std::abort();
@@ -30,7 +30,7 @@ Eventloop* EventloopThread::EventloopStart(){
 
 }
 
-void* StartThread(void * arg){
+void* EventloopThread::StartThread(void * arg){
     EventloopThread* thread=static_cast<EventloopThread*>(arg);
     thread->Threadfunc();
     return nullptr;

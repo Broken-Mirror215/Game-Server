@@ -13,6 +13,7 @@ SRC_DIRS := \
 	Codec \
 	Epoller \
 	Eventloop \
+	EventloopThread \
 	Game-Server \
 	main \
 	Player \

@@ -64,12 +64,12 @@ void Eventloop::queueinLoop(functor cb){
     
      /*
         其他线程投递任务时，要唤醒 epoll_wait。
-
         例如：
         subLoop 正在 epoll_wait 睡眠
         mainLoop 往 subLoop 投递一个任务
         如果不 wakeup，subLoop 可能一直睡着，不会立刻执行任务。
     */
+   
     if (!isInloopthead() || _callingfunctors)
     {
         wakeup();
@@ -103,6 +103,7 @@ bool Eventloop::assertInloopThead() const{
         std::abort();
     }
 }
+
 void Eventloop::runinLoop(functor cb){
     if (isInloopthead()){
         cb();
@@ -114,15 +115,13 @@ void Eventloop::runinLoop(functor cb){
 }
 
 
-//这个系统调用没见过，等会问一下
 int Eventloop::createventfd(){
+    //内核的事件计数fd
     int fd=::eventfd(0,EFD_NONBLOCK|EFD_CLOEXEC);
-
 
     if (fd < 0)
     {
-        std::cerr << "eventfd create error: "
-                  << strerror(errno) << std::endl;
+        std::cerr << "eventfd create error: " << strerror(errno) << std::endl;
         std::abort();
     }
 
@@ -132,13 +131,12 @@ int Eventloop::createventfd(){
 void Eventloop::wakeup()
 {
     uint64_t one = 1;
-
+    //这个相当于把内核事件记录fd置1
     ssize_t n = ::write(_wakefd, &one, sizeof(one));
 
     if (n != sizeof(one))
     {
-        std::cerr << "Eventloop::wakeup write error: "
-                  << strerror(errno) << std::endl;
+        std::cerr << "Eventloop::wakeup write error: "<< strerror(errno) << std::endl;
     }
 }
 
@@ -150,8 +148,7 @@ void Eventloop::handleRead()
 
     if (n != sizeof(one))
     {
-        std::cerr << "Eventloop::handleRead read error: "
-                  << strerror(errno) << std::endl;
+        std::cerr << "Eventloop::handleRead read error: " << strerror(errno) << std::endl;
     }
 }
 
