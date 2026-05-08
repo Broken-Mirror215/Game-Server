@@ -17,6 +17,7 @@ public:
     
 
     void connestablished();
+    void conndestroyed();
     void setcloseCallback(CloseCallback cb){
         _closeback=std::move(cb);
     }
@@ -25,11 +26,15 @@ public:
 
     void send(const std::string& msg);
 
-    int fd();
+    int fd() const;
+
+    Eventloop* getloop() const;
 
 private:
     void handleread();
     void handleclose();
+
+    void sendInloop(const std::string& msg); 
 
 private:
     Eventloop *_loop;

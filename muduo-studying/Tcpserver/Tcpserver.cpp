@@ -5,20 +5,18 @@
 
 Tcpserver::Tcpserver(Eventloop* loop, const char*ip, uint16_t port)
 :_loop(loop),
-_acceptor(loop, ip, port)
+_acceptor(loop, ip, port),
+_started(false),
+_threadnum(0)
 {
     _acceptor.setconnReadback([this](int connfd) {
         this->newConnection(connfd);
     });
 }
 
-void Tcpserver::start()
-{
-    _acceptor.listen();
-}
-
 void Tcpserver::newConnection(int connfd)
 {
+    _loop->assertInloopThead();
     if (connfd < 0)
     {
         std::cout << "accept error" << std::endl;
@@ -27,7 +25,10 @@ void Tcpserver::newConnection(int connfd)
 
     Socket::Setnonblock(connfd);
 
-    auto conn = std::make_shared<Tcpconnection>(_loop, connfd);
+    //新的连接给某个subloop;
+    Eventloop* ioloop=_threadpool->getnextloop();
+
+    auto conn = std::make_shared<Tcpconnection>(ioloop, connfd);
 
     _conns[connfd] = conn;
 
@@ -39,7 +40,9 @@ void Tcpserver::newConnection(int connfd)
     });
 
     conn->setmessageback(_messageback);//这是tcpserver把自己的_messageback转给了tcpconn的_messageback
-    conn->connestablished();
+    ioloop->runinLoop([conn](){
+        conn->connestablished();
+    });
 
     if (_connback)
     {
@@ -50,16 +53,8 @@ void Tcpserver::newConnection(int connfd)
 
 void Tcpserver::removeConnection(const TcpconnectionPtr & conn)
 {
-    int fd=conn->fd();
-    std::cout << "remove connection fd = " << fd << std::endl;
-
-    _loop->queueinLoop([this, fd,conn] {
-        auto it = _conns.find(fd);
-
-        if (it != _conns.end()&&it->second==conn)
-        {
-            _conns.erase(it);
-        }
+    _loop->runinLoop([this,conn]{
+        this->removeConnInLoop(conn);
     });
 }
 
@@ -74,3 +69,38 @@ void Tcpserver::_setConnectionback(const Connectionback& cb){
 void Tcpserver::_setCloseConnback(const CloseConnback&cb){
     _closeback=std::move(cb);
 }
+
+void Tcpserver::setThreadNum(int num){
+    _threadnum=num;
+}
+
+void Tcpserver::start(){
+    if (_started){
+        return;
+    }
+    _started=true;
+
+    _threadpool.reset(new EventloopThreadpool(_loop,_threadnum));
+    _threadpool->Start();
+
+    _loop->runinLoop([this](){
+        _acceptor.listen();
+    });
+}
+
+void Tcpserver::removeConnInLoop(const TcpconnectionPtr& conn){
+    _loop->assertInloopThead();
+    int fd=conn->fd();
+    std::cout<<"remove conn fd is "<<fd<<std::endl;
+
+    auto it=_conns.find(fd);
+    if (it!=_conns.end()&&it->second==conn){
+        _conns.erase(it);
+    }
+
+    Eventloop * ioloop=conn->getloop();
+    ioloop->runinLoop([this,conn](){
+        conn->conndestroyed();
+    });
+}
+

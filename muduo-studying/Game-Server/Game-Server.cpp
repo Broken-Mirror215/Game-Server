@@ -3,15 +3,20 @@
 gServer::gServer()
 :_nextplayerid(1),
 _nextRoomid(1)
-{}
+{
+    pthread_mutex_init(&_mutex,nullptr);
+}
 
 
 void gServer::onConnect(const Connptr & conn){
     Tcpconnection* key=conn.get();
+    pthread_mutex_lock(&_mutex);
     auto p1=std::make_shared<Player>(_nextplayerid++,conn);
 
     //利用玩家的fd创建一个玩家
     _players[key]=p1;
+    int playid=p1->ID();
+    pthread_mutex_unlock(&_mutex);
     std::cout<<"new player id is : "<<p1->ID()<<std::endl;
     conn->send("login success id is " + std::to_string(p1->ID()));
 }
@@ -28,20 +33,26 @@ void gServer::onMessage(const Connptr& conn,const std::string& msg){
 
 void gServer::handlematch(const Connptr & conn){
     Tcpconnection * key=conn.get();
+    std::shared_ptr<Player> currentplayer;
+    std::shared_ptr<Player> nextplayer;
+    pthread_mutex_lock(&_mutex);
 
     auto it=_players.find(key);
     if (it==_players.end())
     {
+        pthread_mutex_unlock(&_mutex);
         conn->send("error find msg");
         return ;
     }
 
-    auto currentplayer=it->second;
+    currentplayer=it->second;
     //如果玩家进了房间，就别匹配
     if (_connRooms.find(key)!=_connRooms.end()){
+        pthread_mutex_unlock(&_mutex);
         conn->send("err! player has been in the room !");
         return ;
     }
+
 
     //设计了防重复match的保护。
     if (_waitingConn.find(key)!=_waitingConn.end()){
@@ -54,6 +65,7 @@ void gServer::handlematch(const Connptr & conn){
         _matchqueue.push(currentplayer);
         _waitingConn.insert(key);
         std::cout<<"player "<<currentplayer->ID()<<" waiting in mathch"<<std::endl;
+        pthread_mutex_unlock(&_mutex);
         conn->send("waiting");
         return ;
     }
@@ -66,6 +78,7 @@ void gServer::handlematch(const Connptr & conn){
     _waitingConn.erase(currentplayer->CON().get());
     if (nextplayer == currentplayer)
     {
+        pthread_mutex_unlock(&_mutex);
         conn->send("err not math self");
         return;
     }
@@ -84,6 +97,8 @@ void gServer::handlematch(const Connptr & conn){
             <<"player "<<currentplayer->ID()
             <<"is vs player "<<nextplayer->ID()<<std::endl;
 
+    pthread_mutex_unlock(&_mutex);
+
     currentplayer->CON()->send(
         "match success roomid "+std::to_string(roomid)+
         "p1 id :"+std::to_string(currentplayer->ID())
@@ -98,10 +113,15 @@ void gServer::handlematch(const Connptr & conn){
 
 void gServer::handleroommsg(const Connptr& conn,const std::string&msg){
     Tcpconnection* key=conn.get();
+    std::shared_ptr<Player> player;
+    std::shared_ptr<Room> room;
+    int roomid=-1;
 
+    pthread_mutex_lock(&_mutex);
     //先找到连接这个房间的玩家
     auto p1=_players.find(key);
     if (p1==_players.end()){
+        pthread_mutex_unlock(&_mutex);
         conn->send("not found the player");
         return;
     }
@@ -110,6 +130,7 @@ void gServer::handleroommsg(const Connptr& conn,const std::string&msg){
     //这是看玩家是不是在某个房间里面？
     auto rit=_connRooms.find(key);
     if (rit==_connRooms.end()){
+        pthread_mutex_unlock(&_mutex);
         conn->send("the player not find in the room");
         return;
     }
@@ -133,8 +154,12 @@ void gServer::handleroommsg(const Connptr& conn,const std::string&msg){
 
 void gServer::onDisconnect(const Connptr & conn){
     Tcpconnection * key=conn.get();
+    pthread_mutex_lock(&_mutex);
     auto it =_players.find(key);
-
+    if (it==_players.end()){
+        pthread_mutex_unlock(&_mutex);
+        return ;
+    }
     auto player=it->second;
     std::cout<<"the disconnect id is "<<player->ID()<<std::endl;
     
@@ -152,4 +177,5 @@ void gServer::onDisconnect(const Connptr & conn){
         }
     }
     _matchqueue.swap(newQueue);
+    pthread_mutex_unlock(&_mutex);
 }

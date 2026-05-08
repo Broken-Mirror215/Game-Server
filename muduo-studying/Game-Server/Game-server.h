@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include "../Room/Room.h"
 #include <unordered_set>
+#include <pthread.h>
 using Connptr=std::shared_ptr<Tcpconnection>;
 class gServer
 {
@@ -44,4 +45,6 @@ private:
 
     //防止自己连接！
     std::unordered_set<Tcpconnection*> _waitingConn;
+
+    pthread_mutex_t _mutex;
 };

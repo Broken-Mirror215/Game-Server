@@ -102,6 +102,7 @@ bool Eventloop::assertInloopThead() const{
         std::cerr<<"eventloop in the wrong thread"<<std::endl;
         std::abort();
     }
+    return true;
 }
 
 void Eventloop::runinLoop(functor cb){
