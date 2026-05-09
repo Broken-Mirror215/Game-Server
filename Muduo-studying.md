@@ -43,3 +43,4 @@ IO线程不一定是主线程，任何一个线程都可以有Eventloop，一个
 在注册监听事件的时候我们走的是fd->channel->Eventpoller->poller->epoll系统。
 在事件发生的时候我们又走了epoll->poller->Eventloop->channel。
 
+

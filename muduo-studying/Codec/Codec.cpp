@@ -10,7 +10,7 @@ void Codec::OnMessage(const Connptr& conn,Buffer * buf){
     
     
     while (buf->readable()>=Header){
-        //下面这部分还在学习中
+        //拆包
         uint32_t be32=0;
         std::memcpy(&be32,buf->peek(),Header);
         uint32_t len=ntohl(be32);
@@ -27,6 +27,7 @@ void Codec::OnMessage(const Connptr& conn,Buffer * buf){
         buf->retrieve(Header);
         std::string msg=buf->retrieveAsstring(len);
 
+        //game-server的onmessage
         if (_stringCallback){
             _stringCallback(conn,msg);
         }

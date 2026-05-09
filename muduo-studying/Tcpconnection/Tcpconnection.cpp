@@ -34,7 +34,8 @@ void Tcpconnection::handleread(){
         if (_messageback)
         {
             
-            _messageback(shared_from_this(),&_inputbuffer);//这个是AI写的，我有点没看懂...
+            _messageback(shared_from_this(),&_inputbuffer);//这个是tcpconn里面的函数对象
+            //仔细观察注册链的话，这个就是codec.OnMessage(conn, &_inputbuffer);
         }
 
     }

@@ -29,8 +29,8 @@ void Eventloop::loop(){
         activechannels.clear();
         //阻塞,事件注册进activechannels里面
         _epr->Epoll(10000,activechannels);
-        for (auto C:activechannels){
-            C->handlerEvent();
+        for (auto activechannel:activechannels){
+            activechannel->handlerEvent();
         }
         //把队列的东西放进来执行清除了
         doqueue();

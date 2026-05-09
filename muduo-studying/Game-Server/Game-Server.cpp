@@ -71,7 +71,7 @@ void gServer::handlematch(const Connptr & conn){
     }
 
     //如果队伍有人，就取出来去匹配。
-    auto nextplayer=_matchqueue.front();
+    nextplayer=_matchqueue.front();
     _matchqueue.pop();
     //AI提示到考虑不要自匹配。
     _waitingConn.erase(nextplayer->CON().get());
@@ -125,7 +125,7 @@ void gServer::handleroommsg(const Connptr& conn,const std::string&msg){
         conn->send("not found the player");
         return;
     }
-    auto player=p1->second;
+    player=p1->second;
 
     //这是看玩家是不是在某个房间里面？
     auto rit=_connRooms.find(key);
@@ -135,14 +135,14 @@ void gServer::handleroommsg(const Connptr& conn,const std::string&msg){
         return;
     }
 
-    int roomid=rit->second;
+    roomid=rit->second;
     auto roomIT=_Rooms.find(roomid);
     if (roomIT==_Rooms.end()){
         conn->send("room not find");
         return;
     }
 
-    auto room=roomIT->second;
+    room=roomIT->second;
 
     //建议包装转发消息...
     std::string realmsg = "PLAYER_MSG from=" + std::to_string(player->ID()) + " " + msg;
