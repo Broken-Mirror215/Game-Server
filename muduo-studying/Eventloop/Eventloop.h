@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
 #include <vector>
-
+#include "../Epoller/Epoller.h"
 class Epoller;
 class Channel;
 typedef std::vector<Channel*> Channellist;

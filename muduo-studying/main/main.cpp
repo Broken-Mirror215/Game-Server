@@ -1,6 +1,5 @@
 #include <iostream>
 #include "../Eventloop/Eventloop.h"
-#include <string>
 #include <unistd.h>
 int main(){
     Eventloop loop;
@@ -24,5 +23,6 @@ int main(){
     });
 
     ch.enableReading();
+    //上面这层就已经注册好读事件了
     loop.loop();
 }

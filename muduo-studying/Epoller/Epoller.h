@@ -21,7 +21,7 @@ private:
 private:
     Eventloop* _looper;
     int _epollfd;
-    std::vector<struct epoll_event> _events;
+    std::vector<struct epoll_event> _events;//这是一个事件集合。
     std::unordered_map<int,Channel*> _channels;
 
 };
